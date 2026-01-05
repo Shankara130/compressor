@@ -15,5 +15,6 @@ func NewSubmitJobUseCase(q service.JobQueue) *SubmitJobUseCase {
 
 func (u *SubmitJobUseCase) Execute(job entity.Job) error {
 	job.Status = entity.JobPending
+	job.Progress = 0
 	return u.Queue.Enqueue(job)
 }

@@ -16,6 +16,7 @@ func NewProcessJobUseCase(q service.JobQueue) *ProcessJobUseCase {
 
 func (u *ProcessJobUseCase) Execute(job entity.Job) {
 	job.Status = entity.JobRunning
+	job.Progress = 10
 	_ = u.Queue.Update(job)
 
 	optimizer, err := factory.NewOptimizer(job.MimeType)
@@ -26,6 +27,9 @@ func (u *ProcessJobUseCase) Execute(job entity.Job) {
 		return
 	}
 
+	job.Progress = 50
+	_ = u.Queue.Update(job)
+
 	err = optimizer.Optimize(job.InputPath, job.OutputPath)
 	if err != nil {
 		job.Status = entity.JobFailed
@@ -35,5 +39,6 @@ func (u *ProcessJobUseCase) Execute(job entity.Job) {
 	}
 
 	job.Status = entity.JobDone
+	job.Progress = 100
 	_ = u.Queue.Update(job)
 }

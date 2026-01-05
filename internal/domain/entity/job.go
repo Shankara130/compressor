@@ -15,5 +15,6 @@ type Job struct {
 	OutputPath string
 	MimeType   string
 	Status     JobStatus
+	Progress   int
 	Error      string
 }

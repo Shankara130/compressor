@@ -6,5 +6,5 @@ type JobQueue interface {
 	Enqueue(job entity.Job) error
 	Dequeue() (entity.Job, error)
 	Update(job entity.Job) error
-	Get(jobID string) (entity.Job, error)
+	Get(id string) (entity.Job, error)
 }
