@@ -4,13 +4,14 @@ import (
 	"testing"
 
 	"github.com/Shankara130/compressor/internal/domain/entity"
+	"github.com/Shankara130/compressor/internal/domain/factory"
 	"github.com/Shankara130/compressor/internal/usecase"
 	"github.com/Shankara130/compressor/internal/usecase/mocks"
 )
 
 func TestProcessJobFail(t *testing.T) {
 	queue := &mocks.JobQueueMock{}
-	uc := usecase.NewProcessJobUseCase(queue)
+	uc := usecase.NewProcessJobUseCase(queue, factory.NewOptimizer)
 
 	job := entity.Job{
 		ID:       "job-2",

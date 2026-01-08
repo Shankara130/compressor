@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/Shankara130/compressor/internal/domain/factory"
 	"github.com/Shankara130/compressor/internal/infrastructure/queue"
 	"github.com/Shankara130/compressor/internal/usecase"
 	"github.com/redis/go-redis/v9"
@@ -12,7 +13,7 @@ func main() {
 	})
 
 	q := queue.NewRedisQueue(redisClient)
-	uc := usecase.NewProcessJobUseCase(q)
+	uc := usecase.NewProcessJobUseCase(q, factory.NewOptimizer)
 
 	for {
 		job, err := q.Dequeue()

@@ -2,16 +2,18 @@ package usecase
 
 import (
 	"github.com/Shankara130/compressor/internal/domain/entity"
-	"github.com/Shankara130/compressor/internal/domain/factory"
 	"github.com/Shankara130/compressor/internal/domain/service"
 )
 
+type OptimizerFactoryFunc func(mime string) (service.Optimizer, error)
+
 type ProcessJobUseCase struct {
-	Queue service.JobQueue
+	Queue     service.JobQueue
+	FactoryFn OptimizerFactoryFunc
 }
 
-func NewProcessJobUseCase(q service.JobQueue) *ProcessJobUseCase {
-	return &ProcessJobUseCase{Queue: q}
+func NewProcessJobUseCase(q service.JobQueue, factoryFn OptimizerFactoryFunc) *ProcessJobUseCase {
+	return &ProcessJobUseCase{Queue: q, FactoryFn: factoryFn}
 }
 
 func (u *ProcessJobUseCase) Execute(job entity.Job) {
@@ -19,7 +21,7 @@ func (u *ProcessJobUseCase) Execute(job entity.Job) {
 	job.Progress = 10
 	_ = u.Queue.Update(job)
 
-	optimizer, err := factory.NewOptimizer(job.MimeType)
+	optimizer, err := u.FactoryFn(job.MimeType)
 	if err != nil {
 		job.Status = entity.JobFailed
 		job.Error = err.Error()
