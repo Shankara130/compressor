@@ -21,7 +21,7 @@ func TestSubmitJobUseCase(t *testing.T) {
 		t.Fatal("unexpected error")
 	}
 
-	if queue.StoredJob.Status != entity.JobPending {
-		t.Errorf("expected PENDING, got %s", queue.StoredJob.Status)
+	if queue.Job.Status != entity.JobPending {
+		t.Errorf("expected PENDING, got %s", queue.Job.Status)
 	}
 }

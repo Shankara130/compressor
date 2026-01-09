@@ -1,8 +1,11 @@
 package main
 
 import (
+	"log"
+
 	"github.com/Shankara130/compressor/internal/domain/factory"
 	"github.com/Shankara130/compressor/internal/infrastructure/queue"
+	"github.com/Shankara130/compressor/internal/infrastructure/repository"
 	"github.com/Shankara130/compressor/internal/usecase"
 	"github.com/redis/go-redis/v9"
 )
@@ -12,14 +15,14 @@ func main() {
 		Addr: "localhost:6379",
 	})
 
-	q := queue.NewRedisQueue(redisClient)
-	uc := usecase.NewProcessJobUseCase(q, factory.NewOptimizer)
+	jobQueue := queue.NewRedisQueue(redisClient)
+	jobRepo := repository.NewRedisJobRepository(redisClient)
+
+	processUC := usecase.NewProcessJobUseCase(jobQueue, jobRepo, factory.NewOptimizer)
+
+	log.Println("worker started")
 
 	for {
-		job, err := q.Dequeue()
-		if err != nil {
-			continue
-		}
-		uc.Execute(job)
+		processUC.Execute()
 	}
 }

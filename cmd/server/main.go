@@ -1,25 +1,33 @@
 package main
 
 import (
-	"github.com/Shankara130/compressor/internal/delivery/http"
+	"log"
+	"net/http"
+	"os"
+
+	httpdelivery "github.com/Shankara130/compressor/internal/delivery/http"
+	"github.com/Shankara130/compressor/internal/delivery/http/handler"
 	"github.com/Shankara130/compressor/internal/infrastructure/queue"
-	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
+	"github.com/Shankara130/compressor/internal/infrastructure/repository"
+	"github.com/Shankara130/compressor/internal/usecase"
 )
 
 func main() {
-	r := gin.Default()
+	_ = os.MkdirAll("tmp/input", 0755)
+	_ = os.MkdirAll("tmp/output", 0755)
 
-	redisClient := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-	})
+	jobQueue := queue.NewInMemoryJobQueue()
+	jobRepo := repository.NewInMemoryJobRepository()
 
-	jobQueue := queue.NewRedisQueue(redisClient)
-	handler := http.NewHandler(jobQueue)
+	submitUC := usecase.NewSubmitJobUseCase(jobQueue)
+	getUC := usecase.NewGetJobUseCase(jobRepo)
 
-	r.POST("/upload", handler.Upload)
-	r.GET("/jobs/:id", handler.GetStatus)
-	r.GET("/download/:id", handler.Download)
+	uploadHandler := &handler.UploadHandler{SubmitUC: submitUC}
+	statusHandler := &handler.StatusHandler{GetUC: getUC}
+	downloadHandler := &handler.DownloadHandler{GetUC: getUC}
 
-	r.Run(":8080")
+	router := httpdelivery.NewRouter(uploadHandler, statusHandler, downloadHandler)
+
+	log.Println("UI server running at :8000")
+	log.Fatal(http.ListenAndServe(":8000", router))
 }

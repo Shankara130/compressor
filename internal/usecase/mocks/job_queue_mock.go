@@ -3,23 +3,23 @@ package mocks
 import "github.com/Shankara130/compressor/internal/domain/entity"
 
 type JobQueueMock struct {
-	StoredJob entity.Job
+	Job entity.Job
 }
 
 func (m *JobQueueMock) Enqueue(job entity.Job) error {
-	m.StoredJob = job
+	m.Job = job
 	return nil
 }
 
 func (m *JobQueueMock) Dequeue() (entity.Job, error) {
-	return m.StoredJob, nil
+	return m.Job, nil
 }
 
 func (m *JobQueueMock) Update(job entity.Job) error {
-	m.StoredJob = job
+	m.Job = job
 	return nil
 }
 
 func (m *JobQueueMock) Get(id string) (entity.Job, error) {
-	return m.StoredJob, nil
+	return m.Job, nil
 }

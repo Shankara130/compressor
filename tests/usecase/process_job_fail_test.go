@@ -10,17 +10,22 @@ import (
 )
 
 func TestProcessJobFail(t *testing.T) {
-	queue := &mocks.JobQueueMock{}
-	uc := usecase.NewProcessJobUseCase(queue, factory.NewOptimizer)
-
 	job := entity.Job{
 		ID:       "job-2",
 		MimeType: "unsupported/type",
 	}
 
-	uc.Execute(job)
+	queue := &mocks.JobQueueMock{
+		Job: job,
+	}
 
-	if queue.StoredJob.Status != entity.JobFailed {
-		t.Errorf("expected FAILED, got %s", queue.StoredJob.Status)
+	repo := &mocks.JobRepositoryMock{}
+
+	uc := usecase.NewProcessJobUseCase(queue, repo, factory.NewOptimizer)
+
+	uc.Execute()
+
+	if repo.UpdatedJob.Status != entity.JobFailed {
+		t.Errorf("expected FAILED, got %s", repo.UpdatedJob.Status)
 	}
 }

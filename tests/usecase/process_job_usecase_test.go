@@ -10,14 +10,6 @@ import (
 )
 
 func TestProcessJobSuccess(t *testing.T) {
-	queue := &mocks.JobQueueMock{}
-
-	factoryMock := func(mime string) (service.Optimizer, error) {
-		return &mocks.OptimizerMock{}, nil
-	}
-
-	uc := usecase.NewProcessJobUseCase(queue, factoryMock)
-
 	job := entity.Job{
 		ID:         "job-1",
 		InputPath:  "input.jpeg",
@@ -25,13 +17,25 @@ func TestProcessJobSuccess(t *testing.T) {
 		MimeType:   "image/jpeg",
 	}
 
-	uc.Execute(job)
-
-	if queue.StoredJob.Status != entity.JobDone {
-		t.Errorf("expected DONE, got %s", queue.StoredJob.Status)
+	queue := &mocks.JobQueueMock{
+		Job: job,
 	}
 
-	if queue.StoredJob.Progress != 100 {
-		t.Errorf("expected progress 100, got %d", queue.StoredJob.Progress)
+	repo := &mocks.JobRepositoryMock{}
+
+	factoryMock := func(mime string) (service.Optimizer, error) {
+		return &mocks.OptimizerMock{}, nil
+	}
+
+	uc := usecase.NewProcessJobUseCase(queue, repo, factoryMock)
+
+	uc.Execute()
+
+	if repo.UpdatedJob.Status != entity.JobDone {
+		t.Errorf("expected DONE, got %s", repo.UpdatedJob.Status)
+	}
+
+	if repo.UpdatedJob.Progress != 100 {
+		t.Errorf("expected progress 100, got %d", repo.UpdatedJob.Progress)
 	}
 }
