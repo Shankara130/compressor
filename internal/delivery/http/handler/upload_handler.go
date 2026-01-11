@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"html/template"
 	"io"
+	"log"
 	"net/http"
 	"os"
 
@@ -22,12 +23,24 @@ func (h *UploadHandler) Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UploadHandler) Upload(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseMultipartForm(10 << 20)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	file, header, err := r.FormFile("file")
 	if err != nil {
 		http.Error(w, "invalid file", http.StatusBadRequest)
 		return
 	}
 	defer file.Close()
+
+	buf := make([]byte, 512)
+	_, _ = file.Read(buf)
+	file.Seek(0, 0)
+
+	mime := http.DetectContentType(buf)
 
 	id := uuid.New().String()
 	input := "tmp/input/" + id
@@ -36,15 +49,24 @@ func (h *UploadHandler) Upload(w http.ResponseWriter, r *http.Request) {
 	os.MkdirAll("tmp/input", 0755)
 	os.MkdirAll("tmp/output", 0755)
 
-	dst, _ := os.Create(input)
+	dst, err := os.Create(input)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer dst.Close()
 
-	_, _ = io.Copy(dst, file)
+	_, err = io.Copy(dst, file)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	job := entity.Job{
 		ID:         id,
 		InputPath:  input,
 		OutputPath: output,
-		MimeType:   header.Header.Get("Content-Type"),
+		MimeType:   mime,
 	}
 
 	if err := h.SubmitUC.Execute(job); err != nil {
@@ -55,4 +77,6 @@ func (h *UploadHandler) Upload(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{
 		"job_id": id,
 	})
+
+	log.Println("UPLOAD RECEIVED:", header.Filename)
 }

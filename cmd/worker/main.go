@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"github.com/Shankara130/compressor/internal/domain/factory"
 	"github.com/Shankara130/compressor/internal/infrastructure/queue"
@@ -23,6 +24,11 @@ func main() {
 	log.Println("worker started")
 
 	for {
-		processUC.Execute()
+		err := processUC.Execute()
+		if err != nil {
+			log.Println("no job / error:", err)
+			time.Sleep(time.Second)
+		}
 	}
+
 }

@@ -1,17 +1,134 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>File Compressor</title>
+    <link rel="stylesheet" href="../static/style.css" />
   </head>
   <body>
-    <h2>Highly Optimized Compressor</h2>
-    <input type="file" id="file" />
-    <button onclick="upload()">Compress</button>
+    <div class="container">
+      <h1>File Compressor</h1>
+      <div class="subtitle">Compress files without losing visual quality</div>
 
-    <div id="status"></div>
+      <form id="uploadForm">
+        <div class="dropzone" id="dropzone">
+          <p>📁 Drop your file here</p>
+          <span>or click to select</span>
+          <input type="file" name="file" hidden required />
+        </div>
 
-    <script src="../static/app.js"></script>
+        <button type="submit" style="margin-top: 16px">Compress File</button>
+      </form>
+
+      <div class="progress" style="display: none">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+
+      <div class="status" id="status"></div>
+      <div class="error" id="error"></div>
+    </div>
+
+    <script>
+      const form = document.getElementById("uploadForm");
+      const dropzone = document.getElementById("dropzone");
+      const fileInput = dropzone.querySelector("input");
+      const progress = document.querySelector(".progress");
+      const bar = document.getElementById("progressBar");
+      const statusEl = document.getElementById("status");
+      const errorEl = document.getElementById("error");
+
+      dropzone.onclick = () => fileInput.click();
+
+      dropzone.ondragover = (e) => {
+        e.preventDefault();
+        dropzone.classList.add("dragover");
+      };
+
+      dropzone.ondragleave = () => {
+        dropzone.classList.remove("dragover");
+      };
+
+      dropzone.ondrop = (e) => {
+        e.preventDefault();
+        dropzone.classList.remove("dragover");
+        fileInput.files = e.dataTransfer.files;
+      };
+
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        errorEl.textContent = "";
+        statusEl.innerHTML = "";
+
+        if (!fileInput.files.length) {
+          errorEl.textContent = "Please select a file first.";
+          return;
+        }
+
+        form.classList.add("loading");
+
+        const data = new FormData();
+        data.append("file", fileInput.files[0]);
+
+        const res = await fetch("/upload", {
+          method: "POST",
+          body: data,
+        });
+
+        if (!res.ok) {
+          errorEl.textContent = "Upload failed.";
+          form.classList.remove("loading");
+          return;
+        }
+
+        const json = await res.json();
+        progress.style.display = "block";
+        bar.style.width = "0%";
+
+        setTimeout(() => pollStatus(json.job_id), 800);
+      };
+
+      async function pollStatus(id) {
+        let res;
+
+        try {
+          res = await fetch(`/status/${id}`);
+        } catch (e) {
+          setTimeout(() => pollStatus(id), 1000);
+          return;
+        }
+
+        if (!res.ok) {
+          setTimeout(() => pollStatus(id), 1000);
+          return;
+        }
+
+        const job = await res.json();
+
+        bar.style.width = job.Progress + "%";
+
+        statusEl.innerHTML = `
+      <span class="badge ${job.Status}">
+        ${job.Status}
+      </span>
+    `;
+
+        if (job.Status === "DONE") {
+          statusEl.innerHTML += `
+        <a class="download" href="/download/${id}">
+          ⬇ Download Result
+        </a>
+      `;
+          form.classList.remove("loading");
+          return;
+        }
+
+        if (job.Status === "FAILED") {
+          errorEl.textContent = job.Error || "Compression failed.";
+          form.classList.remove("loading");
+          return;
+        }
+
+        setTimeout(() => pollStatus(id), 1000);
+      }
+    </script>
   </body>
 </html>

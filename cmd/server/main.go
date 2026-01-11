@@ -10,16 +10,21 @@ import (
 	"github.com/Shankara130/compressor/internal/infrastructure/queue"
 	"github.com/Shankara130/compressor/internal/infrastructure/repository"
 	"github.com/Shankara130/compressor/internal/usecase"
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
 	_ = os.MkdirAll("tmp/input", 0755)
 	_ = os.MkdirAll("tmp/output", 0755)
 
-	jobQueue := queue.NewInMemoryJobQueue()
-	jobRepo := repository.NewInMemoryJobRepository()
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: "localhost:6379",
+	})
 
-	submitUC := usecase.NewSubmitJobUseCase(jobQueue)
+	jobQueue := queue.NewRedisQueue(redisClient)
+	jobRepo := repository.NewRedisJobRepository(redisClient)
+
+	submitUC := usecase.NewSubmitJobUseCase(jobQueue, jobRepo)
 	getUC := usecase.NewGetJobUseCase(jobRepo)
 
 	uploadHandler := &handler.UploadHandler{SubmitUC: submitUC}

@@ -14,12 +14,17 @@ type StatusHandler struct {
 
 func (h *StatusHandler) Get(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimPrefix(r.URL.Path, "/status/")
-	job, err := h.GetUC.Execute(id)
-
-	if err != nil {
-		w.WriteHeader(404)
+	if id == "" {
+		http.NotFound(w, r)
 		return
 	}
 
+	job, err := h.GetUC.Execute(id)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(job)
 }

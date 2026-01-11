@@ -1,6 +1,8 @@
 package usecase
 
 import (
+	"log"
+
 	"github.com/Shankara130/compressor/internal/domain/entity"
 	"github.com/Shankara130/compressor/internal/domain/service"
 )
@@ -17,11 +19,13 @@ func NewProcessJobUseCase(q service.JobQueue, r service.JobRepository, factoryFn
 	return &ProcessJobUseCase{Queue: q, Repository: r, FactoryFn: factoryFn}
 }
 
-func (u *ProcessJobUseCase) Execute() {
+func (u *ProcessJobUseCase) Execute() error {
 	job, err := u.Queue.Dequeue()
 	if err != nil {
-		return
+		return err
 	}
+
+	log.Println("PROCESSING JOB:", job.ID)
 
 	job.Status = entity.JobRunning
 	job.Progress = 10
@@ -32,7 +36,7 @@ func (u *ProcessJobUseCase) Execute() {
 		job.Status = entity.JobFailed
 		job.Error = err.Error()
 		_ = u.Repository.Update(job)
-		return
+		return err
 	}
 
 	job.Progress = 50
@@ -43,10 +47,13 @@ func (u *ProcessJobUseCase) Execute() {
 		job.Status = entity.JobFailed
 		job.Error = err.Error()
 		_ = u.Repository.Update(job)
-		return
+		return err
 	}
 
 	job.Status = entity.JobDone
 	job.Progress = 100
 	_ = u.Repository.Update(job)
+
+	log.Println("JOB DONE:", job.ID)
+	return nil
 }

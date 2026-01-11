@@ -1,7 +1,9 @@
 package optimizer
 
 import (
+	"image"
 	"image/jpeg"
+	"image/png"
 	"os"
 )
 
@@ -18,7 +20,7 @@ func (o *ImageOptimizer) Optimize(input string, output string) error {
 	}
 	defer in.Close()
 
-	img, err := jpeg.Decode(in)
+	img, format, err := image.Decode(in)
 	if err != nil {
 		return err
 	}
@@ -29,5 +31,13 @@ func (o *ImageOptimizer) Optimize(input string, output string) error {
 	}
 	defer out.Close()
 
-	return jpeg.Encode(out, img, &jpeg.Options{Quality: 75})
+	switch format {
+	case "jpeg":
+		return jpeg.Encode(out, img, &jpeg.Options{Quality: 75})
+	case "png":
+		return png.Encode(out, img)
+	default:
+		return nil
+	}
+
 }
