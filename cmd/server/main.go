@@ -51,8 +51,9 @@ func main() {
 	uploadHandler := &handler.UploadHandler{SubmitUC: submitUC}
 	statusHandler := &handler.StatusHandler{GetUC: getUC}
 	downloadHandler := &handler.DownloadHandler{GetUC: getUC}
+	healthHandler := &handler.HealthHandler{}
 
-	router := httpdelivery.NewRouter(uploadHandler, statusHandler, downloadHandler)
+	router := httpdelivery.NewRouter(uploadHandler, statusHandler, downloadHandler, healthHandler)
 
 	server := &http.Server{
 		Addr:         ":" + cfg.ServerPort,
@@ -79,6 +80,10 @@ func main() {
 	defer cancel()
 
 	if err := server.Shutdown(shutdownCtx); err != nil {
+		log.Printf("Server forced to shutdown: %v", err)
+	}
+
+	if err := redisClient.Close(); err != nil {
 		log.Printf("Error closing Redis connection: %v", err)
 	}
 
