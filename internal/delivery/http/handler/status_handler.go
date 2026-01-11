@@ -14,6 +14,13 @@ type StatusHandler struct {
 
 func (h *StatusHandler) Get(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimPrefix(r.URL.Path, "/status/")
+
+	// Security: Prevent path traversal attacks
+	if strings.Contains(id, "..") || strings.ContainsAny(id, "/") || strings.Contains(id, "\\") {
+		http.Error(w, "invalid job ID", http.StatusBadRequest)
+		return
+	}
+
 	if id == "" {
 		http.NotFound(w, r)
 		return
@@ -26,5 +33,8 @@ func (h *StatusHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(job)
+	if err := json.NewEncoder(w).Encode(job); err != nil {
+		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
