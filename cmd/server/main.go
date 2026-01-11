@@ -4,7 +4,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/Shankara130/compressor/internal/config"
 	httpdelivery "github.com/Shankara130/compressor/internal/delivery/http"
 	"github.com/Shankara130/compressor/internal/delivery/http/handler"
 	"github.com/Shankara130/compressor/internal/infrastructure/queue"
@@ -14,12 +16,28 @@ import (
 )
 
 func main() {
-	_ = os.MkdirAll("tmp/input", 0755)
-	_ = os.MkdirAll("tmp/output", 0755)
+	cfg := config.Load()
+
+	if err := os.MkdirAll(cfg.InputDir, 0755); err != nil {
+		log.Fatalf("Failed to create input directory: %v", err)
+	}
+	if err := os.MkdirAll(cfg.OutputDir, 0755); err != nil {
+		log.Fatalf("Failed to create output directory: %v", err)
+	}
 
 	redisClient := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
+		Addr:         cfg.RedisAddr,
+		PoolSize:     10,
+		MinIdleConns: 5,
+		MaxRetries:   3,
+		DialTimeout:  5 * time.Second,
+		ReadTimeout:  3 * time.Second,
+		WriteTimeout: 3 * time.Second,
 	})
+
+	if err := redisClient.Ping(redisClient.Context()).Err(); err != nil {
+		log.Fatalf("Failed to connect to Redis: %v", err)
+	}
 
 	jobQueue := queue.NewRedisQueue(redisClient)
 	jobRepo := repository.NewRedisJobRepository(redisClient)
@@ -33,6 +51,14 @@ func main() {
 
 	router := httpdelivery.NewRouter(uploadHandler, statusHandler, downloadHandler)
 
-	log.Println("UI server running at :8000")
-	log.Fatal(http.ListenAndServe(":8000", router))
+	server := &http.Server{
+		Addr:         ":" + cfg.ServerPort,
+		Handler:      router,
+		ReadTimeout:  time.Duration(cfg.ReadTimeout) * time.Second,
+		WriteTimeout: time.Duration(cfg.WriteTimeout) * time.Second,
+		IdleTimeout:  time.Duration(cfg.IdleTimeout) * time.Second,
+	}
+
+	log.Printf("UI server running at :%s", cfg.ServerPort)
+	log.Fatal(server.ListenAndServe())
 }
