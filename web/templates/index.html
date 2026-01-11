@@ -1,134 +1,123 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>File Compressor</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Compressor - Optimize Your Files</title>
     <link rel="stylesheet" href="../static/style.css" />
   </head>
   <body>
-    <div class="container">
-      <h1>File Compressor</h1>
-      <div class="subtitle">Compress files without losing visual quality</div>
-
-      <form id="uploadForm">
-        <div class="dropzone" id="dropzone">
-          <p>📁 Drop your file here</p>
-          <span>or click to select</span>
-          <input type="file" name="file" hidden required />
-        </div>
-
-        <button type="submit" style="margin-top: 16px">Compress File</button>
-      </form>
-
-      <div class="progress" style="display: none">
-        <div class="progress-bar" id="progressBar"></div>
-      </div>
-
-      <div class="status" id="status"></div>
-      <div class="error" id="error"></div>
+    <!-- Background gradient animation -->
+    <div class="bg-gradient"></div>
+    
+    <!-- Floating particles -->
+    <div class="particles">
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
     </div>
 
-    <script>
-      const form = document.getElementById("uploadForm");
-      const dropzone = document.getElementById("dropzone");
-      const fileInput = dropzone.querySelector("input");
-      const progress = document.querySelector(".progress");
-      const bar = document.getElementById("progressBar");
-      const statusEl = document.getElementById("status");
-      const errorEl = document.getElementById("error");
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <div class="logo">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+            <rect width="40" height="40" rx="12" fill="url(#gradient)" />
+            <path
+              d="M20 10L28 18H24V26C24 27.1 23.1 28 22 28H18C16.9 28 16 27.1 16 26V18H12L20 10Z"
+              fill="white"
+            />
+            <defs>
+              <linearGradient id="gradient" x1="0" y1="0" x2="40" y2="40">
+                <stop offset="0%" stop-color="#667eea" />
+                <stop offset="100%" stop-color="#764ba2" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <h1>Compressor</h1>
+        </div>
+        <p class="subtitle">Optimize files without losing quality</p>
+      </div>
 
-      dropzone.onclick = () => fileInput.click();
+      <!-- Upload Form -->
+      <form id="uploadForm">
+        <div class="dropzone" id="dropzone">
+          <div class="dropzone-icon">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+              <circle cx="32" cy="32" r="30" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4" opacity="0.3"/>
+              <path d="M32 20V44M20 32H44" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <p class="dropzone-text">Drop your file here</p>
+          <span class="dropzone-subtext">or click to browse</span>
+          <input type="file" name="file" hidden required />
+          
+          <!-- File info display -->
+          <div class="file-info" id="fileInfo" style="display: none;">
+            <div class="file-icon">📄</div>
+            <div class="file-details">
+              <div class="file-name"></div>
+              <div class="file-size"></div>
+            </div>
+          </div>
+        </div>
 
-      dropzone.ondragover = (e) => {
-        e.preventDefault();
-        dropzone.classList.add("dragover");
-      };
+        <button type="submit" class="btn-primary">
+          <span>Compress File</span>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M4 10H16M16 10L12 6M16 10L12 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </form>
 
-      dropzone.ondragleave = () => {
-        dropzone.classList.remove("dragover");
-      };
+      <!-- Progress Section -->
+      <div class="progress-section" id="progressSection" style="display: none;">
+        <div class="progress-header">
+          <span class="progress-label">Processing</span>
+          <span class="progress-percent">0%</span>
+        </div>
+        <div class="progress">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+      </div>
 
-      dropzone.ondrop = (e) => {
-        e.preventDefault();
-        dropzone.classList.remove("dragover");
-        fileInput.files = e.dataTransfer.files;
-      };
+      <!-- Status Section -->
+      <div class="status-section" id="statusSection" style="display: none;">
+        <div class="status-card">
+          <div class="status-badge" id="statusBadge"></div>
+          <div class="status-message" id="statusMessage"></div>
+        </div>
+      </div>
 
-      form.onsubmit = async (e) => {
-        e.preventDefault();
-        errorEl.textContent = "";
-        statusEl.innerHTML = "";
-
-        if (!fileInput.files.length) {
-          errorEl.textContent = "Please select a file first.";
-          return;
-        }
-
-        form.classList.add("loading");
-
-        const data = new FormData();
-        data.append("file", fileInput.files[0]);
-
-        const res = await fetch("/upload", {
-          method: "POST",
-          body: data,
-        });
-
-        if (!res.ok) {
-          errorEl.textContent = "Upload failed.";
-          form.classList.remove("loading");
-          return;
-        }
-
-        const json = await res.json();
-        progress.style.display = "block";
-        bar.style.width = "0%";
-
-        setTimeout(() => pollStatus(json.job_id), 800);
-      };
-
-      async function pollStatus(id) {
-        let res;
-
-        try {
-          res = await fetch(`/status/${id}`);
-        } catch (e) {
-          setTimeout(() => pollStatus(id), 1000);
-          return;
-        }
-
-        if (!res.ok) {
-          setTimeout(() => pollStatus(id), 1000);
-          return;
-        }
-
-        const job = await res.json();
-
-        bar.style.width = job.Progress + "%";
-
-        statusEl.innerHTML = `
-      <span class="badge ${job.Status}">
-        ${job.Status}
-      </span>
-    `;
-
-        if (job.Status === "DONE") {
-          statusEl.innerHTML += `
-        <a class="download" href="/download/${id}">
-          ⬇ Download Result
+      <!-- Download Section -->
+      <div class="download-section" id="downloadSection" style="display: none;">
+        <a href="#" class="btn-download" id="downloadBtn">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M10 3V13M10 13L6 9M10 13L14 9M3 17H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Download Optimized File</span>
         </a>
-      `;
-          form.classList.remove("loading");
-          return;
-        }
+      </div>
 
-        if (job.Status === "FAILED") {
-          errorEl.textContent = job.Error || "Compression failed.";
-          form.classList.remove("loading");
-          return;
-        }
+      <!-- Error Section -->
+      <div class="error-section" id="errorSection" style="display: none;">
+        <div class="error-card">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+            <path d="M12 8V12M12 16H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <div class="error-message" id="errorMessage"></div>
+        </div>
+      </div>
 
-        setTimeout(() => pollStatus(id), 1000);
-      }
-    </script>
+      <!-- Footer -->
+      <div class="footer">
+        <p>Supports images (JPG, PNG), videos (MP4, AVI, MOV), and PDFs</p>
+      </div>
+    </div>
+
+    <script src="../static/script.js"></script>
   </body>
 </html>

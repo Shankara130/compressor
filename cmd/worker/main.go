@@ -30,7 +30,7 @@ func main() {
 		WriteTimeout: 3 * time.Second,
 	})
 
-	if err := redisClient.Ping(redisClient.Context()).Err(); err != nil {
+	if err := redisClient.Ping(context.Background()).Err(); err != nil {
 		log.Fatalf("Failed to connect to Redis: %v", err)
 	}
 
@@ -58,7 +58,7 @@ func main() {
 				default:
 					if err := processUC.Execute(ctx); err != nil {
 						if ctx.Err() != nil {
-							log.Printf("Worker %d error: %v", workerID, err)
+							log.Printf("Worker %d error: %v", workerId, err)
 						}
 					}
 				}
