@@ -3,6 +3,7 @@ package queue
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/Shankara130/compressor/internal/domain/entity"
 	"github.com/redis/go-redis/v9"
@@ -17,18 +18,30 @@ func NewRedisQueue(client *redis.Client) *RedisQueue {
 }
 
 func (q *RedisQueue) Enqueue(job entity.Job) error {
-	data, _ := json.Marshal(job)
-	return q.Client.RPush(context.Background(), "jobs", data).Err()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	data, err := json.Marshal(job)
+	if err != nil {
+		return err
+	}
+
+	return q.Client.RPush(ctx, "jobs", data).Err()
 }
 
 func (q *RedisQueue) Dequeue() (entity.Job, error) {
-	res, err := q.Client.BLPop(context.Background(), 0, "jobs").Result()
+	ctx := context.Background()
+
+	res, err := q.Client.BLPop(ctx, 0, "jobs").Result()
 	if err != nil {
 		return entity.Job{}, err
 	}
 
 	var job entity.Job
-	_ = json.Unmarshal([]byte(res[1]), &job)
+	if err := json.Unmarshal([]byte(res[1]), &job); err != nil {
+		return entity.Job{}, err
+	}
+
 	return job, nil
 }
 
