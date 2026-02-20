@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -7,18 +7,6 @@
     <link rel="stylesheet" href="../static/style.css" />
   </head>
   <body>
-    <!-- Background gradient animation -->
-    <div class="bg-gradient"></div>
-    
-    <!-- Floating particles -->
-    <div class="particles">
-      <div class="particle"></div>
-      <div class="particle"></div>
-      <div class="particle"></div>
-      <div class="particle"></div>
-      <div class="particle"></div>
-    </div>
-
     <div class="container">
       <!-- Header -->
       <div class="header">
@@ -31,8 +19,8 @@
             />
             <defs>
               <linearGradient id="gradient" x1="0" y1="0" x2="40" y2="40">
-                <stop offset="0%" stop-color="#667eea" />
-                <stop offset="100%" stop-color="#764ba2" />
+                <stop offset="0%" stop-color="#1e293b" />
+                <stop offset="100%" stop-color="#0f172a" />
               </linearGradient>
             </defs>
           </svg>
@@ -46,16 +34,29 @@
         <div class="dropzone" id="dropzone">
           <div class="dropzone-icon">
             <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-              <circle cx="32" cy="32" r="30" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4" opacity="0.3"/>
-              <path d="M32 20V44M20 32H44" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+              <circle
+                cx="32"
+                cy="32"
+                r="30"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-dasharray="4 4"
+                opacity="0.3"
+              />
+              <path
+                d="M32 20V44M20 32H44"
+                stroke="currentColor"
+                stroke-width="3"
+                stroke-linecap="round"
+              />
             </svg>
           </div>
           <p class="dropzone-text">Drop your file here</p>
           <span class="dropzone-subtext">or click to browse</span>
           <input type="file" name="file" hidden required />
-          
+
           <!-- File info display -->
-          <div class="file-info" id="fileInfo" style="display: none;">
+          <div class="file-info" id="fileInfo" style="display: none">
             <div class="file-icon">📄</div>
             <div class="file-details">
               <div class="file-name"></div>
@@ -67,13 +68,19 @@
         <button type="submit" class="btn-primary">
           <span>Compress File</span>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M4 10H16M16 10L12 6M16 10L12 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path
+              d="M4 10H16M16 10L12 6M16 10L12 14"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
         </button>
       </form>
 
       <!-- Progress Section -->
-      <div class="progress-section" id="progressSection" style="display: none;">
+      <div class="progress-section" id="progressSection" style="display: none">
         <div class="progress-header">
           <span class="progress-label">Processing</span>
           <span class="progress-percent">0%</span>
@@ -84,7 +91,7 @@
       </div>
 
       <!-- Status Section -->
-      <div class="status-section" id="statusSection" style="display: none;">
+      <div class="status-section" id="statusSection" style="display: none">
         <div class="status-card">
           <div class="status-badge" id="statusBadge"></div>
           <div class="status-message" id="statusMessage"></div>
@@ -92,21 +99,38 @@
       </div>
 
       <!-- Download Section -->
-      <div class="download-section" id="downloadSection" style="display: none;">
-        <a href="#" class="btn-download" id="downloadBtn">
+      <div class="download-section" id="downloadSection" style="display: none">
+        <a href="#" class="btn-download" id="downloadBtn" download>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M10 3V13M10 13L6 9M10 13L14 9M3 17H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path
+              d="M10 3V13M10 13L6 9M10 13L14 9M3 17H17"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
           <span>Download Optimized File</span>
         </a>
       </div>
 
       <!-- Error Section -->
-      <div class="error-section" id="errorSection" style="display: none;">
+      <div class="error-section" id="errorSection" style="display: none">
         <div class="error-card">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-            <path d="M12 8V12M12 16H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="2"
+            />
+            <path
+              d="M12 8V12M12 16H12.01"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
           </svg>
           <div class="error-message" id="errorMessage"></div>
         </div>

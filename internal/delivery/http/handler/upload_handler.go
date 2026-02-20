@@ -60,7 +60,7 @@ func (h *UploadHandler) Upload(w http.ResponseWriter, r *http.Request) {
 
 	id := uuid.New().String()
 	input := "tmp/input/" + id
-	output := "tmp/output/" + id
+	output := "tmp/output/" + id + ".mp4"
 
 	if err := os.MkdirAll("tmp/input", 0755); err != nil {
 		http.Error(w, "failed to create input directory", http.StatusInternalServerError)

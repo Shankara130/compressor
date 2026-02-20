@@ -6,18 +6,18 @@
   const dropzone = document.getElementById('dropzone');
   const fileInput = dropzone.querySelector('input[type="file"]');
   const fileInfo = document.getElementById('fileInfo');
-  
+
   const progressSection = document.getElementById('progressSection');
   const progressBar = document.getElementById('progressBar');
   const progressPercent = document.querySelector('.progress-percent');
-  
+
   const statusSection = document.getElementById('statusSection');
   const statusBadge = document.getElementById('statusBadge');
   const statusMessage = document.getElementById('statusMessage');
-  
+
   const downloadSection = document.getElementById('downloadSection');
   const downloadBtn = document.getElementById('downloadBtn');
-  
+
   const errorSection = document.getElementById('errorSection');
   const errorMessage = document.getElementById('errorMessage');
 
@@ -74,7 +74,7 @@
     };
 
     const config = statusConfig[status] || statusConfig['PENDING'];
-    
+
     statusBadge.className = 'status-badge ' + config.class;
     statusBadge.textContent = config.text;
     statusMessage.textContent = config.message;
@@ -124,7 +124,7 @@
   dropzone.addEventListener('drop', (e) => {
     e.preventDefault();
     dropzone.classList.remove('dragover');
-    
+
     if (e.dataTransfer.files.length > 0) {
       fileInput.files = e.dataTransfer.files;
       handleFileSelect(e.dataTransfer.files[0]);
@@ -140,7 +140,7 @@
   // Form submission
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
+
     // Reset UI
     hideAllSections();
 
@@ -206,9 +206,6 @@
         form.classList.remove('loading');
         downloadSection.style.display = 'block';
         downloadBtn.href = `/download/${jobId}`;
-        
-        // Celebration animation
-        confetti();
         return;
       }
 
@@ -226,47 +223,6 @@
       // Retry after delay
       setTimeout(() => pollJobStatus(jobId), 1000);
     }
-  }
-
-  // Simple confetti effect
-  function confetti() {
-    const duration = 2000;
-    const end = Date.now() + duration;
-
-    (function frame() {
-      // Create confetti elements
-      for (let i = 0; i < 3; i++) {
-        const confetti = document.createElement('div');
-        confetti.style.position = 'fixed';
-        confetti.style.width = '10px';
-        confetti.style.height = '10px';
-        confetti.style.background = ['#667eea', '#764ba2', '#10b981', '#f59e0b'][Math.floor(Math.random() * 4)];
-        confetti.style.left = Math.random() * window.innerWidth + 'px';
-        confetti.style.top = '-10px';
-        confetti.style.borderRadius = '50%';
-        confetti.style.pointerEvents = 'none';
-        confetti.style.zIndex = '9999';
-        confetti.style.opacity = '1';
-        confetti.style.transition = 'all 2s ease-out';
-        
-        document.body.appendChild(confetti);
-
-        // Animate
-        setTimeout(() => {
-          confetti.style.top = window.innerHeight + 'px';
-          confetti.style.opacity = '0';
-        }, 10);
-
-        // Remove after animation
-        setTimeout(() => {
-          confetti.remove();
-        }, 2100);
-      }
-
-      if (Date.now() < end) {
-        requestAnimationFrame(frame);
-      }
-    })();
   }
 
   // Reset form on page load
