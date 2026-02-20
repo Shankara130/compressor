@@ -20,7 +20,7 @@ type Config struct {
 
 func Load() *Config {
 	return &Config{
-		ServerPort:   getEnv("SERVER_PORT", "3000"),
+		ServerPort:   getEnv("SERVER_PORT", "8080"),
 		RedisAddr:    getEnv("REDIS_ADDR", "localhost:6379"),
 		InputDir:     getEnv("INPUT_DIR", "tmp/input"),
 		OutputDir:    getEnv("OUTPUT_DIR", "tmp/output"),

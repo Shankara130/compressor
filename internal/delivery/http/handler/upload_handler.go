@@ -2,11 +2,14 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"html/template"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/Shankara130/compressor/internal/domain/entity"
 	"github.com/Shankara130/compressor/internal/usecase"
@@ -30,8 +33,23 @@ func (h *UploadHandler) Index(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func outputExtension(mime string) string {
+	switch {
+	case strings.HasPrefix(mime, "video/"):
+		return ".mp4"
+	case mime == "image/jpeg":
+		return ".jpg"
+	case mime == "image/png":
+		return ".png"
+	case mime == "application/pdf":
+		return ".pdf"
+	default:
+		return ""
+	}
+}
+
 func (h *UploadHandler) Upload(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseMultipartForm(50 << 20)
+	err := r.ParseMultipartForm(500 << 20)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -58,9 +76,25 @@ func (h *UploadHandler) Upload(w http.ResponseWriter, r *http.Request) {
 
 	mime := http.DetectContentType(buf[:n])
 
+	if err := ValidateFile(mime, header.Size, header.Filename); err != nil {
+		statusCode := http.StatusBadRequest
+		if errors.Is(err, ErrFileTooLarge) {
+			statusCode = http.StatusRequestEntityTooLarge
+		}
+		http.Error(w, err.Error(), statusCode)
+		return
+	}
+
+	ext := outputExtension(mime)
+	if ext == "" {
+		http.Error(w, "unsupported file type", http.StatusBadRequest)
+		return
+	}
+
 	id := uuid.New().String()
-	input := "tmp/input/" + id
-	output := "tmp/output/" + id + ".mp4"
+	inputExt := strings.ToLower(filepath.Ext(header.Filename))
+	input := "tmp/input/" + id + inputExt
+	output := "tmp/output/" + id + ext
 
 	if err := os.MkdirAll("tmp/input", 0755); err != nil {
 		http.Error(w, "failed to create input directory", http.StatusInternalServerError)

@@ -39,6 +39,14 @@ func ValidateFile(mime string, size int64, filename string) error {
 			return fmt.Errorf("%w: only .mp4, .avi, .mov, .mkv allowed", ErrUnsupportedFormat)
 		}
 
+	case mime == "application/pdf":
+		if size > MaxPDFSize {
+			return fmt.Errorf("%w: max %dMB for PDFs", ErrFileTooLarge, MaxPDFSize>>20)
+		}
+		if ext != ".pdf" {
+			return fmt.Errorf("%w: only .pdf allowed", ErrUnsupportedFormat)
+		}
+
 	default:
 		return ErrUnsupportedType
 	}

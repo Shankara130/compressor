@@ -6,16 +6,17 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
 	"github.com/Shankara130/compressor/internal/config"
 	httpdelivery "github.com/Shankara130/compressor/internal/delivery/http"
 	"github.com/Shankara130/compressor/internal/delivery/http/handler"
+	"github.com/Shankara130/compressor/internal/domain/factory"
 	"github.com/Shankara130/compressor/internal/infrastructure/queue"
 	"github.com/Shankara130/compressor/internal/infrastructure/repository"
 	"github.com/Shankara130/compressor/internal/usecase"
-	"github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -28,26 +29,16 @@ func main() {
 		log.Fatalf("Failed to create output directory: %v", err)
 	}
 
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:         cfg.RedisAddr,
-		PoolSize:     10,
-		MinIdleConns: 5,
-		MaxRetries:   3,
-		DialTimeout:  5 * time.Second,
-		ReadTimeout:  3 * time.Second,
-		WriteTimeout: 3 * time.Second,
-	})
+	// Shared queue and repository — used by BOTH the HTTP server and workers
+	jobQueue := queue.NewInMemoryJobQueue()
+	jobRepo := repository.NewInMemoryJobRepository()
 
-	if err := redisClient.Ping(context.Background()).Err(); err != nil {
-		log.Fatalf("Failed to connect to Redis: %v", err)
-	}
-
-	jobQueue := queue.NewRedisQueue(redisClient)
-	jobRepo := repository.NewRedisJobRepository(redisClient)
-
+	// Use cases
 	submitUC := usecase.NewSubmitJobUseCase(jobQueue, jobRepo)
 	getUC := usecase.NewGetJobUseCase(jobRepo)
+	processUC := usecase.NewProcessJobUseCase(jobQueue, jobRepo, factory.NewOptimizer)
 
+	// HTTP handlers
 	uploadHandler := &handler.UploadHandler{SubmitUC: submitUC}
 	statusHandler := &handler.StatusHandler{GetUC: getUC}
 	downloadHandler := &handler.DownloadHandler{GetUC: getUC}
@@ -66,26 +57,60 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	// Start workers in background goroutines
+	var wg sync.WaitGroup
+	for i := 0; i < cfg.WorkerCount; i++ {
+		wg.Add(1)
+		go func(workerID int) {
+			defer wg.Done()
+			log.Printf("Worker %d started", workerID)
+			for {
+				select {
+				case <-ctx.Done():
+					log.Printf("Worker %d shutting down", workerID)
+					return
+				default:
+					if err := processUC.Execute(ctx); err != nil && ctx.Err() != nil {
+						log.Printf("Worker %d error: %v", workerID, err)
+					}
+				}
+			}
+		}(i)
+	}
+	log.Printf("Started %d workers", cfg.WorkerCount)
+
+	// Start HTTP server
 	go func() {
-		log.Printf("UI server running at :%s", cfg.ServerPort)
+		log.Printf("HTTP server running at :%s", cfg.ServerPort)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server error: %v", err)
 		}
 	}()
 
+	// Wait for shutdown signal
 	<-ctx.Done()
-	log.Println("Shutting down gracefully, press Ctrl+C again to force")
+	log.Println("Shutting down gracefully...")
 
+	// Shutdown HTTP server
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		log.Printf("Server forced to shutdown: %v", err)
 	}
 
-	if err := redisClient.Close(); err != nil {
-		log.Printf("Error closing Redis connection: %v", err)
+	// Wait for workers to finish
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		log.Println("All workers stopped gracefully")
+	case <-time.After(10 * time.Second):
+		log.Println("Workers shutdown timeout exceeded")
 	}
 
-	log.Println("Server exited")
+	log.Println("Exited")
 }
