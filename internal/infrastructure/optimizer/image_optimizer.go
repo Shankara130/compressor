@@ -5,6 +5,8 @@ import (
 	"image/jpeg"
 	"image/png"
 	"os"
+
+	"github.com/Shankara130/compressor/internal/domain/service"
 )
 
 type ImageOptimizer struct{}
@@ -13,7 +15,7 @@ func NewImageOptimizer() *ImageOptimizer {
 	return &ImageOptimizer{}
 }
 
-func (o *ImageOptimizer) Optimize(input string, output string) error {
+func (o *ImageOptimizer) Optimize(input, output string, _ service.ProgressFunc) error {
 	in, err := os.Open(input)
 	if err != nil {
 		return err

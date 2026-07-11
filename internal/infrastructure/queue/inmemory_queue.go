@@ -1,6 +1,8 @@
 package queue
 
 import (
+	"context"
+
 	"github.com/Shankara130/compressor/internal/domain/entity"
 )
 
@@ -19,6 +21,11 @@ func (q *InMemoryJobQueue) Enqueue(job entity.Job) error {
 	return nil
 }
 
-func (q *InMemoryJobQueue) Dequeue() (entity.Job, error) {
-	return <-q.ch, nil
+func (q *InMemoryJobQueue) Dequeue(ctx context.Context) (entity.Job, error) {
+	select {
+	case job := <-q.ch:
+		return job, nil
+	case <-ctx.Done():
+		return entity.Job{}, ctx.Err()
+	}
 }

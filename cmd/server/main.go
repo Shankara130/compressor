@@ -14,6 +14,7 @@ import (
 	httpdelivery "github.com/Shankara130/compressor/internal/delivery/http"
 	"github.com/Shankara130/compressor/internal/delivery/http/handler"
 	"github.com/Shankara130/compressor/internal/domain/factory"
+	"github.com/Shankara130/compressor/internal/infrastructure/cleanup"
 	"github.com/Shankara130/compressor/internal/infrastructure/queue"
 	"github.com/Shankara130/compressor/internal/infrastructure/repository"
 	"github.com/Shankara130/compressor/internal/usecase"
@@ -65,19 +66,26 @@ func main() {
 			defer wg.Done()
 			log.Printf("Worker %d started", workerID)
 			for {
-				select {
-				case <-ctx.Done():
-					log.Printf("Worker %d shutting down", workerID)
-					return
-				default:
-					if err := processUC.Execute(ctx); err != nil && ctx.Err() != nil {
-						log.Printf("Worker %d error: %v", workerID, err)
+				// Execute blocks on Dequeue(ctx); it returns ctx.Err()
+				// when the context is cancelled during shutdown.
+				if err := processUC.Execute(ctx); err != nil {
+					if ctx.Err() != nil {
+						log.Printf("Worker %d shutting down", workerID)
+						return
 					}
+					log.Printf("Worker %d error: %v", workerID, err)
 				}
 			}
 		}(i)
 	}
 	log.Printf("Started %d workers", cfg.WorkerCount)
+
+	// Periodically reap stale files from tmp so disk usage stays bounded and
+	// files orphaned by a crash/restart are eventually removed. Files younger
+	// than the interval (including active uploads/jobs) are left alone.
+	cleanupInterval := time.Duration(cfg.CleanupIntervalSec) * time.Second
+	go cleanup.Loop(ctx, []string{cfg.InputDir, cfg.OutputDir}, cleanupInterval)
+	log.Printf("Tmp cleaner running every %s", cleanupInterval)
 
 	// Start HTTP server
 	go func() {

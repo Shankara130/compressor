@@ -1,6 +1,7 @@
 package usecase_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/Shankara130/compressor/internal/domain/entity"
@@ -23,7 +24,7 @@ func TestProcessJobFail(t *testing.T) {
 
 	uc := usecase.NewProcessJobUseCase(queue, repo, factory.NewOptimizer)
 
-	uc.Execute()
+	uc.Execute(context.Background())
 
 	if repo.UpdatedJob.Status != entity.JobFailed {
 		t.Errorf("expected FAILED, got %s", repo.UpdatedJob.Status)

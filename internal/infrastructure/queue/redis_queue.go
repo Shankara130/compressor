@@ -29,9 +29,7 @@ func (q *RedisQueue) Enqueue(job entity.Job) error {
 	return q.Client.RPush(ctx, "jobs", data).Err()
 }
 
-func (q *RedisQueue) Dequeue() (entity.Job, error) {
-	ctx := context.Background()
-
+func (q *RedisQueue) Dequeue(ctx context.Context) (entity.Job, error) {
 	res, err := q.Client.BLPop(ctx, 0, "jobs").Result()
 	if err != nil {
 		return entity.Job{}, err

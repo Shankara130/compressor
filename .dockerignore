@@ -1,0 +1,22 @@
+# Keep the Docker build context small and free of junk/secrets.
+# The Dockerfile does `COPY . .`, so anything here is excluded from the image.
+
+# Version control & deploy config
+.git
+.gitignore
+render.yaml
+
+# macOS metadata
+.DS_Store
+**/.DS_Store
+
+# Local runtime artifacts (the image creates its own tmp/output dirs)
+tmp/
+output/
+
+# Tests & generated fixtures (not needed to run the server)
+tests/
+
+# Secrets
+.env
+*.env

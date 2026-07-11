@@ -17,5 +17,5 @@ func (u *OptimizeFileUseCase) Execute(file entity.File) error {
 		return err
 	}
 
-	return optimizer.Optimize(file.InputPath, file.OutputPath)
+	return optimizer.Optimize(file.InputPath, file.OutputPath, nil)
 }

@@ -1,6 +1,10 @@
 package mocks
 
-import "github.com/Shankara130/compressor/internal/domain/entity"
+import (
+	"context"
+
+	"github.com/Shankara130/compressor/internal/domain/entity"
+)
 
 type JobQueueMock struct {
 	Job entity.Job
@@ -11,7 +15,7 @@ func (m *JobQueueMock) Enqueue(job entity.Job) error {
 	return nil
 }
 
-func (m *JobQueueMock) Dequeue() (entity.Job, error) {
+func (m *JobQueueMock) Dequeue(ctx context.Context) (entity.Job, error) {
 	return m.Job, nil
 }
 

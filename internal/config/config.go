@@ -16,19 +16,22 @@ type Config struct {
 	ReadTimeout  int
 	WriteTimeout int
 	IdleTimeout  int
+
+	CleanupIntervalSec int
 }
 
 func Load() *Config {
 	return &Config{
-		ServerPort:   getEnv("SERVER_PORT", "8080"),
-		RedisAddr:    getEnv("REDIS_ADDR", "localhost:6379"),
-		InputDir:     getEnv("INPUT_DIR", "tmp/input"),
-		OutputDir:    getEnv("OUTPUT_DIR", "tmp/output"),
-		MaxFileSize:  50 << 20,
-		WorkerCount:  getEnvAsInt("WORKER_COUNT", runtime.NumCPU()),
-		ReadTimeout:  getEnvAsInt("READ_TIMEOUT", 15),
-		WriteTimeout: getEnvAsInt("WRITE_TIMEOUT", 15),
-		IdleTimeout:  getEnvAsInt("IDLE_TIMEOUT", 60),
+		ServerPort:         getEnv("SERVER_PORT", getEnv("PORT", "8001")),
+		RedisAddr:          getEnv("REDIS_ADDR", "localhost:6379"),
+		InputDir:           getEnv("INPUT_DIR", "tmp/input"),
+		OutputDir:          getEnv("OUTPUT_DIR", "tmp/output"),
+		MaxFileSize:        50 << 20,
+		WorkerCount:        getEnvAsInt("WORKER_COUNT", runtime.NumCPU()),
+		ReadTimeout:        getEnvAsInt("READ_TIMEOUT", 15),
+		WriteTimeout:       getEnvAsInt("WRITE_TIMEOUT", 15),
+		IdleTimeout:        getEnvAsInt("IDLE_TIMEOUT", 60),
+		CleanupIntervalSec: getEnvAsInt("CLEANUP_INTERVAL_SEC", 3600),
 	}
 }
 

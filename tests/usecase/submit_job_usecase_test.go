@@ -10,7 +10,7 @@ import (
 
 func TestSubmitJobUseCase(t *testing.T) {
 	queue := &mocks.JobQueueMock{}
-	uc := usecase.NewSubmitJobUseCase(queue)
+	uc := usecase.NewSubmitJobUseCase(queue, &mocks.JobRepositoryMock{})
 
 	job := entity.Job{
 		ID: "job-1",

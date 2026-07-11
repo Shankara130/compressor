@@ -1,6 +1,7 @@
 package usecase_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/Shankara130/compressor/internal/domain/entity"
@@ -29,7 +30,7 @@ func TestProcessJobSuccess(t *testing.T) {
 
 	uc := usecase.NewProcessJobUseCase(queue, repo, factoryMock)
 
-	uc.Execute()
+	uc.Execute(context.Background())
 
 	if repo.UpdatedJob.Status != entity.JobDone {
 		t.Errorf("expected DONE, got %s", repo.UpdatedJob.Status)

@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"os"
-	"time"
 
 	"github.com/Shankara130/compressor/internal/domain/entity"
 	"github.com/Shankara130/compressor/internal/domain/service"
@@ -23,13 +22,7 @@ func NewProcessJobUseCase(q service.JobQueue, r service.JobRepository, factoryFn
 }
 
 func (u *ProcessJobUseCase) Execute(ctx context.Context) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-	}
-
-	job, err := u.Queue.Dequeue()
+	job, err := u.Queue.Dequeue(ctx)
 	if err != nil {
 		return err
 	}
@@ -37,17 +30,11 @@ func (u *ProcessJobUseCase) Execute(ctx context.Context) error {
 	log.Printf("PROCESSING JOB: %s (mime: %s)", job.ID, job.MimeType)
 
 	defer func() {
+		// The input file is no longer needed once the job has been processed.
+		// Output files are reaped later by the periodic tmp cleaner.
 		if job.Status == entity.JobDone || job.Status == entity.JobFailed {
 			if err := os.Remove(job.InputPath); err != nil {
 				log.Printf("Failed to cleanup input file %s: %v", job.InputPath, err)
-			}
-
-			if job.Status == entity.JobDone {
-				time.AfterFunc(24*time.Hour, func() {
-					if err := os.Remove(job.OutputPath); err != nil {
-						log.Printf("Failed to cleanup output file %s: %v", job.OutputPath, err)
-					}
-				})
 			}
 		}
 	}()
@@ -91,7 +78,19 @@ func (u *ProcessJobUseCase) Execute(ctx context.Context) error {
 	default:
 	}
 
-	err = optimizer.Optimize(job.InputPath, job.OutputPath)
+	err = optimizer.Optimize(job.InputPath, job.OutputPath, func(percent int) {
+		// Map the optimizer's 0..100 onto the 50..99 band of the overall job;
+		// 100 is reserved for completion.
+		if percent < 0 {
+			percent = 0
+		} else if percent > 99 {
+			percent = 99
+		}
+		job.Progress = 50 + percent*49/100
+		if err := u.Repository.Update(job); err != nil {
+			log.Printf("Failed to update job progress: %v", err)
+		}
+	})
 	if err != nil {
 		job.Status = entity.JobFailed
 		job.Error = err.Error()
